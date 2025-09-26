@@ -65,11 +65,17 @@ flask run
 ตั้งค่า DATABASE_URL เป็น PostgreSQL (Render จะให้ URL มา)
 
 📦 requirements.txt (ตัวอย่าง)
+
 Flask==2.3.3
+
 Authlib==1.2.1
+
 SQLAlchemy==2.0.39
+
 python-dotenv==1.0.0
+
 gunicorn==21.2.0
+
 psycopg==3.2.3   # ถ้าใช้ PostgreSQL บน Python 3.13
 
 📄 License

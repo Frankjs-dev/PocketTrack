@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Pocket Tracker</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.css" rel="stylesheet" />
+        <script src="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    <body class="bg-gray-100 flex justify-center items-start h-screen py-0">
+        <!-- Log in / User info -->
+        <div class="fixed top-4 right-4 z-50" id="user-login-container">
+            {% if user_data %}
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-white bg-green-500 px-3 py-1 rounded shadow-lg">
+                        {{ user_data.username }}
+                    </span>
+                    <a href="/logout" class="bg-gray-700 text-white px-3 py-1 rounded shadow-lg hover:bg-gray-600">Logout</a>
+                </div>
+            {% else %}
+                <button id="google-login" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow-lg">
+                    Login with Google
+                </button>
+            {% endif %}
+        </div>
+
+        <script>
+        {% if not user_data %}
+        document.getElementById('google-login').onclick = function() {
+            const width = 500;
+            const height = 600;
+            const left = (screen.width - width) / 2;
+            const top = (screen.height - height) / 2;
+            window.open('/login', 'GoogleLogin', `width=${width},height=${height},top=${top},left=${left}`);
+        };
+
+        // รับข้อความจาก popup หลัง login สำเร็จ
+        window.addEventListener('message', function(event) {
+            if (event.origin !== window.location.origin) return;
+            console.log('User info from Google:', event.data);
+
+            // เปลี่ยนปุ่ม Login เป็นชื่อ user ทันที
+            const container = document.getElementById('user-login-container');
+            container.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-white bg-green-500 px-3 py-1 rounded shadow-lg">${event.data.username}</span>
+                    <a href="/logout" class="bg-gray-700 text-white px-3 py-1 rounded shadow-lg hover:bg-gray-600">Logout</a>
+                </div>
+            `;
+            window.location.reload();
+
+        });
+        {% endif %}
+        </script>
+
+        <section class="px-8 py-24"> 
+            <div class="bg-white shadow-lg rounded-xl p-8">
+                <div class="container mx-auto text-center">
+                    <h2 class="block antialiased tracking-normal font-sans text-4xl font-semibold leading-[1.3] text-blue-gray-900 mb-4 ">Pocket Tracker</h2>
+                    <p class="block antialiased font-sans text-base leading-relaxed text-inherit mb-8 font-normal !text-gray-500">“ติดตามรายรับ-รายจ่ายง่าย ๆ ด้วย Pocket Tracker เว็บแอปอัจฉริยะสำหรับการเงินของคุณ”</p>
+                </div>
+                
+                <div class="mt-8">
+                    <!-- Income div -->
+                    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                        <div class="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md border border-blue-gray-100">
+                            <div class="relative bg-clip-border mt-4 mx-4 rounded-xl overflow-hidden bg-transparent text-gray-700 shadow-none !m-0 p-6">
+                                <h5 class="block antialiased tracking-normal font-sans text-xl font-semibold leading-snug text-blue-gray-900 capitalize text-green-600">Income</h5>
+                                <p class="block antialiased font-sans text-sm leading-normal text-inherit font-normal !text-gray-500">ยอดเงินทั้งหมดที่คุณได้รับ</p>
+                                <!-- Income -->
+                                <h3 class="antialiased tracking-normal font-sans text-3xl font-semibold leading-snug text-blue-gray-900 flex gap-1 mt-4 text-green-300">
+                                    {% if user_data %}
+                                        {{ user_data.sum_income }}
+                                        <span class="block antialiased tracking-normal font-sans text-base font-semibold leading-relaxed text-blue-gray-900 -translate-y-0.5 self-end opacity-70">บาท</span>
+                                    {% else %}
+                                        <span class="text-gray-400">กรุณาเข้าสู่ระบบ</span>
+                                    {% endif %}
+                                </h3>
+                                <!-- Income Button -->
+                                <button data-modal-target="income-modal" data-modal-toggle="income-modal" 
+                                        class="mt-6 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-300 {% if not user_data %}opacity-50 cursor-not-allowed{% endif %}"
+                                        {% if not user_data %}disabled{% endif %}>
+                                    บันทึกรายรับ
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Expense div -->
+                        <div class="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md border border-blue-gray-100">
+                            <div class="relative bg-clip-border mt-4 mx-4 rounded-xl overflow-hidden bg-transparent text-gray-700 shadow-none !m-0 p-6">
+                                <h5 class="block antialiased tracking-normal font-sans text-xl font-semibold leading-snug text-blue-gray-900 capitalize text-red-600">Expense</h5>
+                                <p class="block antialiased font-sans text-sm leading-normal text-inherit font-normal !text-gray-500">รายจ่ายทั้งหมดที่เกิดขึ้น</p>
+                                <!-- Expense -->
+                                <h3 class="antialiased tracking-normal font-sans text-3xl font-semibold leading-snug text-blue-gray-900 flex gap-1 mt-4 text-red-300">
+                                    {% if user_data %}
+                                        {{ user_data.sum_expense }}
+                                        <span class="block antialiased tracking-normal font-sans text-base font-semibold leading-relaxed text-blue-gray-900 -translate-y-0.5 self-end opacity-70">บาท</span>
+                                    {% else %}
+                                        <span class="text-gray-400">กรุณาเข้าสู่ระบบ</span>
+                                    {% endif %}
+                                </h3>
+                                <!-- Expense Button -->
+                                <button data-modal-target="expense-modal" data-modal-toggle="expense-modal" 
+                                        class="mt-6 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-300 {% if not user_data %}opacity-50 cursor-not-allowed{% endif %}"
+                                        {% if not user_data %}disabled{% endif %}>
+                                    บันทึกรายจ่าย
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Balance div -->
+                        <div class="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md border border-blue-gray-100">
+                            <div class="relative bg-clip-border mt-4 mx-4 rounded-xl overflow-hidden bg-transparent text-gray-700 shadow-none !m-0 p-6">
+                                <h5 class="block antialiased tracking-normal font-sans text-xl font-semibold leading-snug text-blue-gray-900 capitalize text-sky-600">Balance</h5>
+                                <p class="block antialiased font-sans text-sm leading-normal text-inherit font-normal !text-gray-500">ภาพรวมสถานะการเงินปัจจุบัน</p>
+                                <!-- Balance -->
+                                <h3 class="antialiased tracking-normal font-sans text-3xl font-semibold leading-snug text-blue-gray-900 flex gap-1 mt-4 text-sky-300">
+                                    {% if user_data %}
+                                        {{ user_data.sum_income - user_data.sum_expense }}
+                                        <span class="block antialiased tracking-normal font-sans text-base font-semibold leading-relaxed text-blue-gray-900 -translate-y-0.5 self-end opacity-70">บาท</span>
+                                    {% else %}
+                                        <span class="text-gray-400">กรุณาเข้าสู่ระบบ</span>
+                                    {% endif %}
+                                </h3>
+                                <!-- Summary Button -->
+                                <button data-modal-target="summary-modal" data-modal-toggle="summary-modal" 
+                                        class="mt-6 bg-sky-600 text-white px-4 py-2 rounded hover:bg-blue-300 {% if not user_data %}opacity-50 cursor-not-allowed{% endif %}"
+                                        {% if not user_data %}disabled{% endif %}>
+                                    สรุปภาพรวม
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Report -->
+                <div class="w-full rounded-lg border shadow-sm overflow-hidden bg-white border-stone-200 shadow-stone-950/5 h-full flex flex-col justify-between col-span-2 mt-4">
+                <!-- Header -->
+                <div class="h-max rounded w-full justify-between flex items-start gap-4 p-4 m-0">
+                    <div>
+                    <small class="font-sans antialiased text-sm text-stone-600 font-semibold block mb-2">
+                        รายงานการเงิน
+                    </small>
+                    <h2 class="font-sans antialiased font-bold text-lg md:text-xl lg:text-2xl text-sky-600">
+                        {% if user_data %}
+                            ยอดคงเหลือ: ฿ {{ user_data.sum_income - user_data.sum_expense }}
+                        {% else %}
+                            <span class="text-gray-400">กรุณาเข้าสู่ระบบ</span>
+                        {% endif %}
+                    </h2>
+                    </div>
+                    
+                    <!-- Time Period Dropdown -->
+                    {% if user_data %}
+                    <div class="relative">
+                        <div class="dropdown" data-dui-placement="bottom-start">                            
+                            <div data-dui-role="menu"
+                                class="hidden mt-2 bg-white border border-stone-200 rounded-lg shadow-sm p-1 z-10">
+                                <a href="?period=week" class="block px-4 py-2 text-sm text-stone-800 hover:bg-stone-100 rounded-md">สัปดาห์นี้</a>
+                                <a href="?period=month" class="block px-4 py-2 text-sm text-stone-800 hover:bg-stone-100 rounded-md">เดือนนี้</a>
+                                <a href="?period=year" class="block px-4 py-2 text-sm text-stone-800 hover:bg-stone-100 rounded-md">ปีนี้</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Chart -->
+                {% if user_data %}
+                <div class="w-full h-max rounded py-2.5 px-4 pb-4 pt-0">
+                    <canvas id="financeChart" class="h-40 sm:h-56"></canvas>
+                </div>
+                {% endif %}
+
+                <!-- Summary -->
+                <div class="w-full rounded flex items-center gap-6 justify-between flex-wrap p-4">
+                    <div>
+                        <small class="font-sans antialiased text-sm text-stone-600 font-semibold block mb-2">รายรับ</small>
+                        <h2 class="font-sans antialiased font-bold text-lg md:text-xl lg:text-2xl text-green-600">
+                            {% if user_data %}
+                                ฿ {{ user_data.sum_income }}
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </h2>
+                    </div>
+                    <div>
+                        <small class="font-sans antialiased text-sm text-stone-600 font-semibold block mb-2">รายจ่าย</small>
+                        <h2 class="font-sans antialiased font-bold text-lg md:text-xl lg:text-2xl text-red-600">
+                            {% if user_data %}
+                                ฿ {{ user_data.sum_expense }}
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </h2>
+                    </div>
+                </div>
+                </div>
+            </div>
+        <!-- Income modal -->
+        <div id="income-modal" tabindex="-1" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full">
+            <div class="relative w-full max-w-md max-h-full">
+                <div class="relative bg-white rounded-lg shadow">
+                    <div class="flex items-start justify-between p-4 border-b rounded-t">
+                        <h3 class="text-xl font-semibold">บันทึกรายรับ</h3>
+                        <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center" data-modal-hide="income-modal">
+                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <form action="{{ url_for('add_income') }}" method="POST" class="p-4">
+                        <div class="mb-4">
+                            <label class="block mb-2 text-sm font-medium text-gray-900">จำนวนเงิน</label>
+                            <input 
+                                name="amount" 
+                                type="number" 
+                                min="0" 
+                                step="0.01"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
+                                required
+                            >
+                        </div>
+                        <div class="mb-4">
+                            <label class="block mb-2 text-sm font-medium text-gray-900">หมวดหมู่</label>
+                            <select name="category" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                <option value="salary">เงินเดือน</option>
+                                <option value="bonus">โบนัส</option>
+                                <option value="other">อื่นๆ</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="text-white bg-green-500 hover:bg-green-600 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">บันทึก</button>
+                    </form>
+                </div>
+            </div>
+        </div>    
+        <!-- Expense Modal -->
+        <div id="expense-modal" tabindex="-1" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full">
+            <div class="relative w-full max-w-md max-h-full">
+                <div class="relative bg-white rounded-lg shadow">
+                    <div class="flex items-start justify-between p-4 border-b rounded-t">
+                        <h3 class="text-xl font-semibold">บันทึกรายจ่าย</h3>
+                        <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center" data-modal-hide="expense-modal">
+                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <form action="{{ url_for('add_expense') }}" method="POST" class="p-4">
+                        <div class="mb-4">
+                            <label class="block mb-2 text-sm font-medium text-gray-900">จำนวนเงิน</label>
+                            <input 
+                                name="amount" 
+                                type="number" 
+                                min="0" 
+                                step="0.01"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
+                                required
+                            >
+                        </div>
+                        <div class="mb-4">
+                            <label class="block mb-2 text-sm font-medium text-gray-900">หมวดหมู่</label>
+                            <select name="category" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                <option value="food">อาหาร</option>
+                                <option value="transport">เดินทาง</option>
+                                <option value="shopping">ช้อปปิ้ง</option>
+                                <option value="utility">ค่าสาธารณูปโภค</option>
+                                <option value="entertainment">บันเทิง</option>
+                                <option value="other">อื่นๆ</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="text-white bg-red-500 hover:bg-red-600 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">บันทึก</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Summary Modal -->
+        <div id="summary-modal" tabindex="-1" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full">
+            <div class="relative w-full max-w-2xl max-h-full">
+                <div class="relative bg-white rounded-lg shadow">
+                    <div class="flex items-start justify-between p-4 border-b rounded-t">
+                        <h3 class="text-xl font-semibold">สรุปภาพรวมการเงิน</h3>
+                        <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center" data-modal-hide="summary-modal">
+                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Summary Modal content -->
+                    <div class="p-6 space-y-6">
+                        {% if user_data %}
+                            <div class="grid grid-cols-2 gap-6">
+                                <div class="bg-green-50 p-4 rounded-lg">
+                                    <h4 class="text-green-600 font-semibold mb-2">รายรับทั้งหมด</h4>
+                                    <p class="text-2xl font-bold text-green-600">฿{{ user_data.sum_income }}</p>
+                                </div>
+                                <div class="bg-red-50 p-4 rounded-lg">
+                                    <h4 class="text-red-600 font-semibold mb-2">รายจ่ายทั้งหมด</h4>
+                                    <p class="text-2xl font-bold text-red-600">฿{{ user_data.sum_expense }}</p>
+                                </div>
+                            </div>
+                            <div class="bg-sky-50 p-4 rounded-lg">
+                                <h4 class="text-sky-600 font-semibold mb-2">ยอดคงเหลือ</h4>
+                                <p class="text-2xl font-bold text-sky-600">฿{{ user_data.sum_income - user_data.sum_expense }}</p>
+                            </div>
+                            <div>
+                                <canvas id="summaryChart" class="w-full h-64"></canvas>
+                            </div>
+                        {% else %}
+                            <div class="text-center text-gray-500">
+                                <p>กรุณาเข้าสู่ระบบเพื่อดูข้อมูล</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        </section>
+
+        <script>
+        {% if user_data %}
+        const ctx = document.getElementById('financeChart').getContext('2d');
+        const financeChart = new Chart(ctx, {
+            type: 'pie',  // หรือใช้ 'pie' สำหรับวงกลมทึบ
+            data: {
+                labels: ['รายรับ', 'รายจ่าย'],
+                datasets: [{
+                    data: [
+                        {{ user_data.sum_income|default(0) if user_data else 0 }}, 
+                        {{ user_data.sum_expense|default(0) if user_data else 0 }}
+                    ],
+                    backgroundColor: [
+                        'rgb(34, 197, 94)',  // สีเขียวสำหรับรายรับ
+                        'rgb(239, 68, 68)'   // สีแดงสำหรับรายจ่าย
+                    ],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    title: {
+                        display: true,
+                        text: 'สัดส่วนรายรับ-รายจ่าย'
+                    }
+                }
+            }
+        });
+
+        // Add summary chart
+        const summaryCtx = document.getElementById('summaryChart');
+        new Chart(summaryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['รายรับ', 'รายจ่าย'],
+                datasets: [{
+                    data: [{{ user_data.sum_income|default(0) if user_data else 0 }}, {{ user_data.sum_expense|default(0) if user_data else 0 }}],
+                    backgroundColor: [
+                        'rgb(34, 197, 94)',
+                        'rgb(239, 68, 68)'
+                    ],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    title: {
+                        display: true,
+                        text: 'สัดส่วนรายรับ-รายจ่าย'
+                    }
+                }
+            }
+        });
+        {% endif %}
+        </script>
+    </body>
+</html>

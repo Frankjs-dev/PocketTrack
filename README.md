@@ -7,8 +7,8 @@ PocketTrack คือเว็บแอปสำหรับ บันทึก�
 🔗 เว็บไซต์ตัวอย่าง: https://pockettrack-teon.onrender.com/
 
 🔗 วิธีการใช้งานเว็บเบื้องต้น: https://youtu.be/qAzAn2kgeX8
-<img width="779" height="1199" alt="image" src="https://github.com/user-attachments/assets/30234155-4c19-4f04-bd25-7d8e43f09505" />
 
+<img width="779" height="1199" alt="image" src="https://github.com/user-attachments/assets/30234155-4c19-4f04-bd25-7d8e43f09505" />
 
 ✨ ฟีเจอร์หลัก
 
@@ -36,7 +36,7 @@ Deployment: Render
 
 🚀 วิธีติดตั้งและใช้งาน
 1. โคลนโปรเจกต์
-git clone https://github.com/USERNAME/PocketTrack.git
+git clone https://github.com/Frankjs-dev/PocketTrack.git
 cd PocketTrack
 
 2. สร้าง Virtual Environment และติดตั้ง dependencies

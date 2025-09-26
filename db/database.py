@@ -1,9 +1,12 @@
 import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from db.models import Base
 
-# ใช้ PostgreSQL URL จาก Render แทน SQLite
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///pockettrack.db')
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
+engine = create_engine(DATABASE_URL, echo=True)
+
 
 # แก้ไข URL สำหรับ Postgres
 if DATABASE_URL.startswith('postgres://'):
